@@ -30,3 +30,49 @@ int main()
     } while (L>delta);
     cout << "количество итераций: "<<k;
 }
+
+
+#include <iostream>
+#include <cmath> // Для abs()
+
+using namespace std;
+
+double l = 0.2;
+double a = -4;
+double b = 6;
+
+double f(double x) {
+    return 3 * x * x - x + 4;
+}
+
+int main() {
+    setlocale(LC_ALL, "Ru");
+    int k = 0;
+    double delta;
+    double y = a + 0.38196 * (b - a);
+    double z = a + b - y;
+
+    do {
+        k++;
+        cout << f(y) << " " << f(z) << endl;
+
+        if (f(y) < f(z)) {
+            b = z;
+            z = y;
+            y = a + b - y;
+        }
+        else {
+            a = y;
+            y = z;
+            z = a + b - z;
+        }
+
+        delta = abs(a - b);
+        cout << a << " " << b << " " << y << " " << z << endl;
+        cout << delta << endl;
+        cout << endl;
+
+    } while (delta > l);
+
+    return 0;
+}
