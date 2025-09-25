@@ -1,0 +1,77 @@
+#include <iostream>
+#include <cmath>
+
+using namespace std;
+
+double l = 1;
+double eps = 0.05;
+double a = -4;
+double b = 6;
+
+double f(double x) {
+    return 3 * x * x - x + 4;
+}
+
+int main() {
+    double L = abs(b - a) / l;
+    double fib1 = 1;
+    double fib2 = 1;
+    int N = 1;
+
+    while (L > fib2) {
+        double temp = fib2;
+        fib2 +=fib1;
+        fib1 = temp;
+        N++;
+    }
+
+    cout << N << endl;
+
+    double* F = new double[N];
+    F[0] = F[1]=1;
+    for (int i = 2; i <= N; i++) {
+        F[i] = F[i - 1] + F[i - 2];
+        cout << F[i] << " ";
+    }
+    cout << endl;
+
+    int k = -1;
+    double y = a + F[N - 2] / F[N] * (b - a);
+    double z = a + F[N - 1] / F[N] * (b - a);
+
+    do {
+        k++;
+        cout <<"f(y): "<< f(y) << " " <<"f(z): "<< f(z) << endl;
+
+        if (f(y) <= f(z)) {
+            b = z;
+            z = y;
+            y = a + F[N - k - 3] / F[N - k - 1] * (b - a);
+        }
+        else {
+            a = y;
+            y = z;
+            z = a + F[N - k - 2] / F[N - k - 1] * (b - a);
+        }
+
+        cout <<"a: "<< a << " " <<"b: "<< b << " " <<"y: "<< y << " " <<"z: "<< z << endl;
+        if (abs(a - b) < l)
+            break;
+        if (k == N - 3) {
+            double oldy = y;
+            double oldz = z;
+            oldy = oldz = (a + b) / 2;
+            y = oldy = oldz;
+            z = y + eps;
+            if (f(y) > f(z)) {
+                a = y;
+            }
+            
+        }
+    } while (k != N - 3);
+    z = y + eps;
+    cout << "f(y): " << f(y) << " f(z): " << f(z) << endl;
+    a = y;
+    cout << "a: " << a << " b: " << b << " y: " << y << " z: " << z << endl;
+    cout << "(a+b)/2 = " << (a + b) / 2 << endl;
+}
