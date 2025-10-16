@@ -1,0 +1,114 @@
+#include <iostream>
+#include <vector>
+using namespace std;
+
+double eps1 = 0.1;
+double eps2 = 0.15;
+int M = 10;
+double x1 = 1.5;
+double x2 = 0.5;
+double x1next = 0;
+double x2next = 0;
+vector<vector<double>>H = { {2,1},{1,16} };
+
+double func(double x1, double x2) {
+	return x1 * x1 + 8 * x2 * x2 + x1 * x2 + x1;
+}
+
+void gradient(double x1, double x2, double& g1, double& g2) {
+	g1 = 2 * x1 + x2 + 1;
+	//cout << g1 << endl;
+	g2 = x1 + 16 * x2;
+	//cout << g2 << endl;
+}
+
+double dist_first(double x1, double x2) {
+	return sqrt(pow(x1, 2) + pow(x2, 2));
+}
+
+void inverseMatr(vector<vector<double>>& matr, vector<vector<double>>& inv) {
+	double det = matr[0][0] * matr[1][1] - matr[0][1] * matr[1][0];
+	//cout << det << endl;
+	inv[0][0] = matr[1][1] / det;
+	inv[0][1] = -matr[0][1] / det;
+	inv[1][0] = -matr[1][0] / det;
+	inv[1][1] = matr[0][0] / det;
+}
+
+double det(vector<vector<double>>& matr) {
+	return matr[0][0] * matr[1][1] - matr[0][1] * matr[1][0];
+}
+
+double dist_second(double x1, double x2, double x1next, double x2next) {
+	double x1res = x1next - x1;
+	double x2res = x2next - x2;
+	double res = sqrt(pow(x1res, 2) + pow(x2res, 2));
+	return res;
+}
+
+double dist_third(double fx1, double fx2) {
+	return abs(fx2 - fx1);
+}
+int main() {
+	setlocale(LC_ALL, "Ru");
+	int k = 0;
+	vector<vector<double>>d;
+	vector<vector<double>>inv(2, vector<double>(2));
+	double t = 1;
+	do {
+		cout << "итерация: " << k + 1 << endl;
+		double g1 = 0;
+		double g2 = 0;
+		gradient(x1, x2, g1, g2);
+		cout<<fixed << "градиент: (" << g1 << "," << g2 << ")" << endl;
+		cout << "||gradf(x^"<<k<<") || = " << dist_first(g1, g2) << endl;
+		if (dist_first(g1, g2) <= eps1) {
+			cout << "выполняется критерий окончания ||gradiendf(x^" << k << ")||<=eps1 ";
+			x1next = x1;
+			x2next = x2;
+			cout << "x*=x^k=(" << x1next << ";" << x2next << ")" << endl;
+			break;
+		}
+		if (k >= M) {
+			x1next = x1;
+			x2next = x2;
+			break;
+		}
+		cout << "матрица Гессе: " << endl;
+		for (int i = 0; i < 2; i++) {
+			for (int j = 0; j < 2; j++) {
+				cout << H[i][j] << " ";
+			}
+			cout << endl;
+		}
+		cout << "обратная матрица: " << endl;
+		inverseMatr(H,inv);
+		for (int i = 0; i < 2; i++) {
+			for (int j = 0; j < 2; j++) {
+				cout << inv[i][j] << " ";
+			}
+			cout << endl;
+		}
+		if (inv[0][0] > 0 && det(H) > 0) {
+			d = { {-(inv[0][0] * g1 + inv[0][1] * g2)},{-(inv[1][0] * g1 + inv[1][1] * g2)} };
+		}
+		else {
+			d = { {-g1},{-g2} };
+		}
+
+		x1next = x1 + t * d[0][0];
+		x2next = x2 + t * d[1][0];
+		cout << "x^"<<k+1<<": (" << x1next << ", " << x2next << ")" << endl;
+		if (dist_second(x1, x2, x1next, x2next) < eps2 && dist_third(func(x1, x2), func(x1next, x2next))) {
+			cout << "условия ||x^" << k + 1 << "-x^" << k << "||<eps2 и |f(x^" << k + 1 << ")-f(x^" << k << ")|<eps2 выполнены. Рассчет окончен" << endl;
+			break;
+		}
+		else {
+			k+=1;
+			x1 = x1next;
+			x2 = x2next;
+			cout << endl;
+		}
+		
+	}while (1);
+}
