@@ -1,0 +1,203 @@
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <iomanip>
+using namespace std;
+
+double eps1 = 0.1;
+double eps2 = 0.15;
+int M = 10;
+double x1 = 1.5;
+double x2 = 0.5;
+double x1next = 0;
+double x2next = 0;
+//double y1 = 1.5;
+//double y2 = 0.5;
+double y1next = 0;
+double y2next = 0;
+int n = 2;
+double k = 0;
+vector<double>d0 = { 0,0 };
+vector<double>d1 = { 1,0 };
+vector<double>d2 = { 0,1 };
+vector<vector<double>>vec = {d0, d1,d2 };
+
+double func(double x1, double x2) {
+    return x1 * x1 + 8 * x2 * x2 + x1 * x2 + x1;
+}
+
+// Функция для квадратичной аппроксимации
+double t_value(double a, double b, double c, double t) {
+    return a * t * t + b * t + c;
+}
+
+// Метод золотого сечения для квадратичной функции
+double find_t(double t_a, double t_b, double t_c) {
+    double l = 0.00001;
+    int k = 0;
+    double a = -2.0;
+    double b = 2.0;
+
+    double golden_ratio = (3 - sqrt(5)) / 2;
+    double y_k = a + golden_ratio * (b - a);
+    double z_k = a + b - y_k;
+
+    double L = 1;
+
+    while (L > l) {
+        double f_y = t_value(t_a, t_b, t_c, y_k);
+        double f_z = t_value(t_a, t_b, t_c, z_k);
+
+        if (f_y < f_z) {
+            b = z_k;
+            z_k = y_k;
+            y_k = a + b - z_k;
+        }
+        else {
+            a = y_k;
+            y_k = z_k;
+            z_k = a + b - y_k;
+        }
+
+        L = abs(a - b);
+        k++;
+    }
+
+    return (a + b) / 2;
+}
+bool vectorsEqual(const vector<double>& v1, const vector<double>& v2, double eps = 1e-6) {
+    if (v1.size() != v2.size()) return false;
+    for (int i = 0; i < v1.size(); i++) {
+        if (abs(v1[i] - v2[i]) > eps) return false;
+    }
+    return true;
+}
+double norma(double x1, double x2, double x1next, double x2next) {
+    double x1res = x1next - x1;
+    double x2res = x2next - x2;
+    return sqrt(pow(x1res, 2) + pow(x2res, 2));
+}
+bool rang(const vector<vector<double>>& d) {
+    double det = d[0][0] * d[1][1] - d[0][1] * d[1][0];
+    return abs(det) > 1e-6;
+}
+int main() {
+	setlocale(LC_ALL, "Ru");
+	for (int k = 0; k < 3; k++)
+		vec[0] = vec[k];
+    vector<double> xk = { x1, x2 };
+    double end = 0;
+    bool flag = false;
+    int i;
+    vector<double>y_next(2, 0);
+	do {
+        cout << "Итерация k = " << k << endl;
+        cout << "x^" << k << " = (" << xk[0] << ", " << xk[1] << ")" << endl;
+        cout << "f(x^" << k << ") = " << func(xk[0], xk[1]) << endl;
+        i = 0;
+
+        vector<double> y0 = xk;
+        vector<double> y_prev = y0;
+        vector<double> y1(2, 0);
+
+
+        while(i <=n){
+            cout << "Направление d" << i << " = (" << vec[i][0]
+                << ", " << vec[i][1] << ")" << endl;
+            double t_a = vec[i][0] * vec[i][0] + 8 * vec[i][1] * vec[i][1] + vec[i][0] * vec[i][1];
+            double t_b = 2 * y_prev[0] * vec[i][0] + 16 * y_prev[1] * vec[i][1] + (y_prev[0] * vec[i][1] + vec[i][0] * y_prev[1]) + vec[i][0];
+            double t_c = func(y_prev[0], y_prev[1]);
+
+            double t = find_t(t_a, t_b, t_c);
+            cout << "Оптимальный шаг t = " << t << endl;
+            y_next[0] = y_prev[0] + t * vec[i][0];
+            y_next[1] = y_prev[1] + t * vec[i][1];
+
+            cout << "Новая точка: (" << y_next[0] << ", " << y_next[1] << ")" << endl;
+            if (i == 0) {
+                y1 = y_next;
+            }
+
+            if (i < n - 1) {
+                i++;
+                y_prev = y_next;
+                continue;
+            }
+            if (i == n - 1) {
+                if (vectorsEqual(y_next, y0)) {
+                    cout << "выполнено условие y^n = y^0" << endl;
+                    x1next = y_next[0];
+                    x2next = y_next[1];
+                    flag = true;
+                    break;
+                }
+                else {
+                    i++;
+                    y_prev = y_next;
+                    continue;
+                }
+            }
+            else if (i == n) {
+                if (vectorsEqual(y_next, y1)) {
+                    cout << "выполнено условие y^(n+1) = y^1" << endl;
+                    x1next = y_next[0];
+                    x2next = y_next[1];
+                    flag = true;
+                    break;
+                }
+                else {
+                    cout << "переход к построению сопряженных направлений" << endl;
+                    break;
+                }
+            }
+            y_prev = y_next;
+        }
+        if (flag) break;
+        vector<double> xk1 = y_next;
+        if (norma(xk[0], xk[1], xk1[0], xk1[1])<eps1) {
+            cout << "выполнено условие окончания ||x^{k+1} - x^k|| < eps" << endl;
+            x1next = xk1[0];
+            x2next = xk1[1];
+            flag = true;
+            break;
+        }
+        //cout << y_next[0] << " " << y_next[1] << " " << y1[0] << " " << y1[1] << endl;
+        vector<vector<double>> old_vec = vec;
+        vector<double>new_vec(2);
+        new_vec[0] = y_next[0] - y1[0];
+        new_vec[1] = y_next[1] - y1[1];
+        //cout << new_vec[0] << " " << new_vec[1] << endl;
+
+        vector<vector<double>> temp_d = vec;
+
+        temp_d[0] = new_vec; // d0 = новое направление
+        temp_d[1] = vec[2];        // d1 = d2
+        temp_d[2] = new_vec; // d2 = новое направление (d0 = d2)
+
+        cout << "направления после обновления:" << endl;
+        cout << "d0 = (" << temp_d[0][0] << ", " << temp_d[0][1] << ")" << endl;
+        cout << "d1 = (" << temp_d[1][0] << ", " << temp_d[1][1] << ")" << endl;
+        cout << "d2 = (" << temp_d[2][0] << ", " << temp_d[2][1] << ")" << endl;
+
+        vector<vector<double>> d_to_check = { temp_d[1], temp_d[2] };
+        if (rang(d_to_check)) {
+            cout << "Новая система направлений линейно независима" << endl;
+            vec = temp_d;
+        }
+        else {
+            cout << "Новая система направлений линейно зависима" << endl;
+            cout << "Продолжаем поиск в старых направлениях" << endl;
+            vec = old_vec;
+            continue;
+        }
+        xk = xk1;
+        k++;
+        cout << endl;
+
+	} while (!flag);
+    cout << endl;
+    cout << "результаты:" << endl;
+    cout << "x* = (" << y_next[0] << ", " << y_next[1] << ")" << endl;
+    cout << "f(x*) = " << func(y_next[0], y_next[1]) << endl;
+    cout << "Количество итераций: " << i << endl;
+}
